@@ -1,24 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#define TAM 256 // Existem 256 valores possíveis para um byte (0 a 255)
-
-typedef unsigned char uchar;
-typedef unsigned short ushort; // Serve para o cabecalho (linha 371)
-typedef unsigned long long int ulli;
-typedef unsigned long long ull; //Serah usado para saber o total de bits do arquivo compactado
-
-typedef struct no{
-    void* byte;
-    void* frequencia;
-    struct no* dir,*esq,*prox;
-}No;
-
-typedef struct lista{
-    No* inicio;
-    int tam;
-}Lista;
+#include "compactador.h"
 
 //Criacao da lista
 Lista* criar_lista(){
@@ -749,20 +729,3 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     }
 }
 
-
-int main() {
-    char nome_arquivo_original[100], nome_arquivo_compactado[100];
-
-    // Lendo os nomes dos arquivos
-    printf("Digite o nome do arquivo original: ");
-    fgets(nome_arquivo_original, sizeof(nome_arquivo_original), stdin);
-    nome_arquivo_original[strcspn(nome_arquivo_original, "\n")] = 0; // Remover nova linha
-
-    printf("Digite o nome do arquivo compactado: ");
-    fgets(nome_arquivo_compactado, sizeof(nome_arquivo_compactado), stdin);
-    nome_arquivo_compactado[strcspn(nome_arquivo_compactado, "\n")] = 0; // Remover nova linha
-
-    compactar_arquivo(nome_arquivo_original, nome_arquivo_compactado);
-
-    return 0;
-}
