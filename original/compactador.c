@@ -688,20 +688,15 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     // Passo 1: Gerar tabela de frequências
     tabela_frequencia(nome_arquivo_original, frequencia);
 
-   imprimir_frequencia(frequencia);
-    printf("\n");
-
+    
     // Passo 2: Criar lista de nós e gerar a árvore de Huffman
     Lista* lista = criar_lista();
     preencher(lista, frequencia);
 
-    imprimir_lista(lista);
-    printf("\n");
+    
 
     No* raiz = gerar_arvore(lista);
 
-    imprimir_arvore(raiz);
-    printf("\n");
 
     // Passo 3: Gerar tabela de códigos
     char* tabela_codigos[TAM] = {0};
@@ -709,7 +704,7 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     
     gerar_tabela_codigos(raiz, codigo_inicial, tabela_codigos);
 
-    tab_cod_aux(raiz);
+    
 
     ull tam_arq = contar_bits_totais(nome_arquivo_original,tabela_codigos); 
 
@@ -720,6 +715,17 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     // Passo 4: Escrever o arquivo compactado
     //escrever_arquivo_compactado(nome_arquivo_original, nome_arquivo_compactado, tabela_codigos);
     gerar_arquivo_compactado(nome_arquivo_original,nome_arquivo_compactado,tabela_codigos,bit_lix,tam_arvore,huffman);
+
+    //Debugg
+    /*
+    imprimir_frequencia(frequencia);
+    printf("\n");
+    imprimir_lista(lista);
+    printf("\n");
+    imprimir_arvore(raiz);
+    printf("\n");
+    tab_cod_aux(raiz);
+    */
 
     // Libere a memória da tabela de códigos
     for (int i = 0; i < TAM; i++) {
