@@ -14,25 +14,6 @@ Lista* criar_lista(){
 
 }
 
-//Criacao do novo noh
-/*
-No* criar_noh(void* byte, void* frequencia){
-    No* new_noh = (No*)malloc(sizeof(No));
-
-    if( new_noh != NULL){
-        *((uchar*)new_noh->byte) = *((uchar*)byte);
-        *((ulli*)new_noh->frequencia) = *((ulli*)frequencia);
-        new_noh->dir = NULL;
-        new_noh->esq = NULL;
-        new_noh->prox = NULL;
-        
-        return new_noh;
-    }else{
-        printf("Falha na criacao do noh\n");
-        return NULL;
-    }
-}
-*/
 No* criar_noh(void* byte, void* frequencia){
     No* new_noh = (No*)malloc(sizeof(No));
 
@@ -59,57 +40,6 @@ Caso 3: O noh a ser inserido vai ficar no meio ou no fim
 
 
 */
-
-/*
-void lista_ordenado(Lista *list, No* no){
-    
-    if( list == NULL || no == NULL){
-        return; //Houve algum erro na alocacao da lista ou do noh
-    }
-    
-    //Caso 1
-    if( list->inicio == NULL){
-        list->inicio = no;
-    
-    }
-    //Caso 2
-    else if( no->frequencia < list->inicio->frequencia){
-        //O novo noh precisa apontar para o inicio da lista
-        no->prox = list->inicio;
-
-        //Agora temos que atualizar o inicio da lista
-        list->inicio = no;
-       
-    }
-    //Caso 3
-    else{
-        /*Temos que percorrer a lista, para isso faremos um noh auxiliar,
-            pois nao podemos alterar o "list->inicio"(so alteramos se queremos mexer no inicio da lista)
-
-        
-        No* aux = list->inicio; //Criamos um ponteiro auxiliar para o inicio da lista
-
-        //Verificar se a lista tem um proximo noh
-        
-        while( aux->prox != NULL && aux->prox->frequencia < no->frequencia){
-            //aux->prox->frequencia: estamos pegando a frequencia do proximo noh
-            aux = aux->prox; // caminhando na lista
-        }
-        /*Caso o prox seja nulo teremos uma insercao no final ou 
-        a frequencia do proximo nao eh igual a frequencia do noh que queremos inserir
-        O novo nog vai ficar apos o auxiliar e antes do proximo, ficando no meio deles
-        
-        //Temos que colocar o novo noh na lista
-        no->prox = aux->prox;
-
-        //Temos que atualizar o auxiliar
-        aux->prox = no;
-        
-    }
-    list->tam++;
-}
-*/
-
 
 void lista_ordenado(Lista *list, No* no) {
     if (list == NULL || no == NULL) {
