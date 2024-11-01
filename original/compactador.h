@@ -132,7 +132,7 @@ ull contar_bits_totais( const char* nome_arquivo, char** tabela_codigos);
 /*
 Nesta funcao leremos o arquivo original byte por byte, depois substituir cada byte pelo seu codigo respectivo de Huffman, que foi gerado anteriormente(gerar_tabela_codigos); armazenando essa sequencia no arquivo compactado.
 */
-void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nome_arquivo_compactado, char** tabela_codigos,int bits_lixo,int tamanho_arvore,char* arvore_huffman);
+void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nome_arquivo_compactado, char** tabela_codigos,int bits_lixo,int tamanho_arvore,char* arvore_huffman,No* raiz);
 
 //Funcao para calcular o total de bits_lixo do arquivo
 /*

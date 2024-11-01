@@ -6,7 +6,7 @@ int main() {
     
     do
     {
-        printf("Digite a opcao que voce quer: compactar, descompactar ou sair\n");
+        printf("\nDigite a opcao que voce quer: compactar, descompactar ou sair\n");
         fgets(opcao,20,stdin);
         opcao[strcspn(opcao, "\n")] = 0; // Remover nova linha
 
