@@ -146,6 +146,11 @@ int total_bits_lixo( ull tot_bit);
 
 int calcular_tamanho_arvore(No* raiz);
 
+//Funcao para escrever a arvore em pre-ordem e colocar no arquivo, posteriormente
+//Vale salientar que devemos considerar que cada noh interno eh "*"
+//A folha possui o caracter ou byte que queremos para formar o arquivo posteriormente na descompactacao
+void pre_ordem(No* raiz, uchar* tree, int *i);
+
 //Funcao para gerar o codigo da arvore (printar em pre-ordem)
 char* codificar(char** tabela_codigos,const char* nome_arquivo);
 

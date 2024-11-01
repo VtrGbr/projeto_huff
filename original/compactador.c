@@ -440,109 +440,7 @@ Nesta funcao leremos o arquivo original byte por byte, depois substituir cada by
             2º: O cabeçalho receberah: bits_lixo << 13 | tamanho_arvore. Ele "juntarah" os bits_lixo com o tamanho da arvore no cabecalho. Explicaremos mais detalhado dentro da funcao
 */
 
-void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nome_arquivo_compactado, char** tabela_codigos,int bits_lixo,int tamanho_arvore,char* arvore_huffman){
-    //Vamos criar dois arquivos e abrir eles
-    FILE* arquivo_original = fopen(nome_arquivo_original,"rb"); // Arquivo que serah lido e compactado
-    FILE* arquivo_compactado = fopen(nome_arquivo_compactado,"wb"); // Arquivo onde os dados compactados serao escritos
 
-    //Verificacao de seguranca
-    if( arquivo_compactado == NULL || arquivo_original == NULL){
-        perror("Falha ao abrir os arquivos");
-        return; // Paro o processo
-    }else{
-
-        //Construcao do cabecalho:
-        /*
-        O cabecalho tem que ter 3 bits (mais significativos) representando os bits_lixo e 13 bits( menos significativos) representando o tamanho da arvore.
-
-        Queremos explicar como vai funcionar o calculo do cabecalho: 
-        ushort cabecalho = (bits_lixo << 13) | tamanho_arvore
-
-        Vamos deslocar os bits de lixo 13 vezes para a esquerda, pois assim garantimos que o bits de lixo serao os 3 bits mais significativos do cabecalho. Logo depois faremos a operacao OR bit a bit, para colocar o tamanho da arvore; pois esta operacao vai comparar os bits e quando um desses bits forem 1, ela coloca 1
-
-        Exemplo
-        bits_lixo = 7 ( 0000000000000111)
-        tamanho da arvore = 1234 ( 10011010010)
-
-        Quando fazemos bits_lixo << 13, obteremos: 
-        1110000000000000
-
-        Logo apos vamos fazer a comparacao bit a bit: ((bits_lixo << 13) | tamanho_arvore)
-        1110000000000000
-             10011010010
-        1110010011010010 
-        */
-        ushort cabecalho = (bits_lixo << 13) | tamanho_arvore;
-
-        //Depois de feito o cabecalho escreveremos ele no arquivo compactado
-        fwrite(&cabecalho, sizeof(ushort),1,arquivo_compactado);
-
-        //Escrevendo a arvore de Huffman no arquivo
-        fwrite(arvore_huffman,sizeof(char),tamanho_arvore,arquivo_compactado);
-
-        int byte; // Armazena temporariamente cada byte lido do arquivo original
-        uchar buffer = 0; // Armazena ate 8 bits que serao escritos no arquivo compactado
-        int bits_preenchidos = 0; // conta quantos bits foram preenchidos no buffer
-
-        //Leitura do arquivo original
-        //Le cada byte do arquivo original usando fgetc(), vamos ler o arquivo ate encontrarmos o final do arquivo
-        while((byte = fgetc(arquivo_original)) != EOF){
-
-            //Para cada byte lido, a funcao obtem o codigo de Huffman correspondente da "tabela_codigos"
-
-            char *codigos = tabela_codigos[(uchar)byte];
-
-            //Agora vamos percorrer "codigos" e para cada caracter no codigo de Huffman,ele irah verificar se esse caracter eh '1',caso seja '1', ele adiciona o bit correspondente no "buffer"
-
-            for( int i = 0; i < strlen(codigos); i++){
-                /*
-                Importante explicar o porquê desse '1':
-                Caso o caracter seja '1' isso quer dizer que, no codigo de Huffman, esse bit precisa ser ativado (ou seja, colocado como 1) no "buffer". Por isso usamos a operacao bit a bit para adcionar o bit 1 na posicao correta do "buffer".
-
-                Caso o caracter seja '0' nao fazemos nada porque o bit ja estah desativado (preenchido com 0) e o "buffer" permanece inalterado, pois o "buffer" comeca com todos os bits desligados
-
-                Isso garante que a sequencia correta de bits seja escrita no arquivo compactado
-                */
-                if( codigos[i] == '1'){
-                    /*
-                    A operacao "buffer |= ( 1 << ( 7  - bits_preenchidos))" define o bit na posicao correta do "buffer".
-
-                    "( 7 - bits_preenchidos)": calcula a posicao exata do bit no byte, comecando da posicao mais a esquerda (mais significativo) ate o bit mais a direita (menos significativo).
-
-                    "buffer |=" : o operador "|=" adiciona o bit 1 aquela posicao especifica do "buffer", sem alterar os outros bits que ja estao armazenados
-                    */
-
-                    buffer |= ( 1 << ( 7  - bits_preenchidos)); // adiciona 1 no bit selecionado 
-
-                }
-
-                bits_preenchidos++;
-                
-                //Completamos 1 byte
-                if( bits_preenchidos == 8){
-                    //Apos completar 1 byte, ele eh colocado no arquivo compactado
-                    fputc(buffer,arquivo_compactado); // Escreve o byte completo
-                    buffer = 0; // Zeramos o "buffer" para armazenar o proximo conjuto de bits
-                    bits_preenchidos = 0; 
-
-                }
-            }
-
-        }
-
-        //Caso restem bits no "buffer", vamos preencher esses bits restante com 0, para formar 1 byte completo
-        if( bits_preenchidos > 0){
-
-            fputc(buffer,arquivo_compactado);
-        }
-
-        //Fechamos os arquivos
-        fclose(arquivo_compactado);
-        fclose(arquivo_original);
-    }
-
-
-}
 
 //Funcao para calcular o total de bits_lixo do arquivo
 /*
@@ -611,6 +509,151 @@ char* codificar(char** tabela_codigos,const char* nome_arquivo){
     return codigo;
 }
 
+//Funcao para escrever a arvore em pre-ordem e colocar no arquivo, posteriormente
+//Vale salientar que devemos considerar que cada noh interno eh "*"
+//A folha possui o caracter ou byte que queremos para formar o arquivo posteriormente na descompactacao
+void pre_ordem(No* raiz, uchar* tree, int *i){
+    //Verificacao de seguranca
+    if( raiz != NULL){
+        //Vamos verificar se encontramos um noh folha
+        if( raiz->esq == NULL && raiz->dir == NULL){
+            //Vamos para o caso "especial", que eh o noh folha ter o "*" ou o "\\"
+            if( *(uchar*)raiz->byte == '*' || *(uchar*)raiz->byte == '\\'){
+              //Lembrando que quando fazemos "*(uchar*)raiz->byte", estamos querendo saber qual o conteudo presente no raiz->byte, ou seja, qual o byte presente naquele noh folha
+              tree[*i] == '\\';
+
+              (*i)++;  
+            }else{
+                //Caso ele nao seja "*" nem "\\", entao coloque no vetor o byte presente no noh byte
+                tree[*i] = *(uchar*)raiz->byte;
+                (*i)++;
+            }
+        }else{
+            //Caso nao estivermos em um noh folha, estaremos em um noh intermediario, que eh representado por "*"
+            tree[*i] == '*';
+            (*i)++;
+        }
+
+        //Observacao: incrementamos o valor de "*i" para que possamos saber o valor dele ao final da funcao e podermos usarmos este valor ao escrever a arvore no arquivo compactado e tambem para podermos navegar no vetor
+
+        pre_ordem(raiz->esq,tree,i);
+        pre_ordem(raiz->dir,tree,i);
+    }
+}   
+
+
+void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nome_arquivo_compactado, char** tabela_codigos,int bits_lixo,int tamanho_arvore,char* codigo_huffman,No* raiz){
+    //Vamos criar dois arquivos e abrir eles
+    int i = 0;
+    FILE* arquivo_original = fopen(nome_arquivo_original,"rb"); // Arquivo que serah lido e compactado
+    FILE* arquivo_compactado = fopen(nome_arquivo_compactado,"wb"); // Arquivo onde os dados compactados serao escritos
+
+    //Verificacao de seguranca
+    if( arquivo_compactado == NULL || arquivo_original == NULL){
+        perror("Falha ao abrir os arquivos");
+        return; // Paro o processo
+    }else{
+
+        //Construcao do cabecalho:
+        /*
+        O cabecalho tem que ter 3 bits (mais significativos) representando os bits_lixo e 13 bits( menos significativos) representando o tamanho da arvore.
+
+        Queremos explicar como vai funcionar o calculo do cabecalho: 
+        ushort cabecalho = (bits_lixo << 13) | tamanho_arvore
+
+        Vamos deslocar os bits de lixo 13 vezes para a esquerda, pois assim garantimos que o bits de lixo serao os 3 bits mais significativos do cabecalho. Logo depois faremos a operacao OR bit a bit, para colocar o tamanho da arvore; pois esta operacao vai comparar os bits e quando um desses bits forem 1, ela coloca 1
+
+        Exemplo
+        bits_lixo = 7 ( 0000000000000111)
+        tamanho da arvore = 1234 ( 10011010010)
+
+        Quando fazemos bits_lixo << 13, obteremos: 
+        1110000000000000
+
+        Logo apos vamos fazer a comparacao bit a bit: ((bits_lixo << 13) | tamanho_arvore)
+        1110000000000000
+             10011010010
+        1110010011010010 
+        */
+
+        uchar arvore[1024]; // talvez precise mudar o tamanho deste vetor
+        pre_ordem(raiz,arvore,&i);
+
+        fwrite(arvore,sizeof(uchar),i,arquivo_compactado); // Colocando a arvore no arquivo
+
+        ushort cabecalho = (bits_lixo << 13) | tamanho_arvore;
+
+        //Depois de feito o cabecalho escreveremos ele no arquivo compactado
+        fwrite(&cabecalho, sizeof(ushort),1,arquivo_compactado);
+
+        //Escrevendo a arvore de Huffman no arquivo
+        fwrite(codigo_huffman,sizeof(char),tamanho_arvore,arquivo_compactado);
+
+        int byte; // Armazena temporariamente cada byte lido do arquivo original
+        uchar buffer = 0; // Armazena ate 8 bits que serao escritos no arquivo compactado
+        int bits_preenchidos = 0; // conta quantos bits foram preenchidos no buffer
+
+        //Leitura do arquivo original
+        //Le cada byte do arquivo original usando fgetc(), vamos ler o arquivo ate encontrarmos o final do arquivo
+        while((byte = fgetc(arquivo_original)) != EOF){
+
+            //Para cada byte lido, a funcao obtem o codigo de Huffman correspondente da "tabela_codigos"
+
+            char *codigos = tabela_codigos[(uchar)byte];
+
+            //Agora vamos percorrer "codigos" e para cada caracter no codigo de Huffman,ele irah verificar se esse caracter eh '1',caso seja '1', ele adiciona o bit correspondente no "buffer"
+
+            for( int i = 0; i < strlen(codigos); i++){
+                /*
+                Importante explicar o porquê desse '1':
+                Caso o caracter seja '1' isso quer dizer que, no codigo de Huffman, esse bit precisa ser ativado (ou seja, colocado como 1) no "buffer". Por isso usamos a operacao bit a bit para adcionar o bit 1 na posicao correta do "buffer".
+
+                Caso o caracter seja '0' nao fazemos nada porque o bit ja estah desativado (preenchido com 0) e o "buffer" permanece inalterado, pois o "buffer" comeca com todos os bits desligados
+
+                Isso garante que a sequencia correta de bits seja escrita no arquivo compactado
+                */
+                if( codigos[i] == '1'){
+                    /*
+                    A operacao "buffer |= ( 1 << ( 7  - bits_preenchidos))" define o bit na posicao correta do "buffer".
+
+                    "( 7 - bits_preenchidos)": calcula a posicao exata do bit no byte, comecando da posicao mais a esquerda (mais significativo) ate o bit mais a direita (menos significativo).
+
+                    "buffer |=" : o operador "|=" adiciona o bit 1 aquela posicao especifica do "buffer", sem alterar os outros bits que ja estao armazenados
+                    */
+
+                    buffer |= ( 1 << ( 7  - bits_preenchidos)); // adiciona 1 no bit selecionado 
+
+                }
+
+                bits_preenchidos++;
+                
+                //Completamos 1 byte
+                if( bits_preenchidos == 8){
+                    //Apos completar 1 byte, ele eh colocado no arquivo compactado
+                    fputc(buffer,arquivo_compactado); // Escreve o byte completo
+                    buffer = 0; // Zeramos o "buffer" para armazenar o proximo conjuto de bits
+                    bits_preenchidos = 0; 
+
+                }
+            }
+
+        }
+
+        //Caso restem bits no "buffer", vamos preencher esses bits restante com 0, para formar 1 byte completo
+        if( bits_preenchidos > 0){
+
+            fputc(buffer,arquivo_compactado);
+        }
+
+        //Fechamos os arquivos
+        fclose(arquivo_compactado);
+        fclose(arquivo_original);
+    }
+
+
+}
+
+
 //Funcao geral para compactar o arquivo
 void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arquivo_compactado) {
     ulli frequencia[TAM] = {0};
@@ -644,7 +687,7 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
 
     // Passo 4: Escrever o arquivo compactado
     //escrever_arquivo_compactado(nome_arquivo_original, nome_arquivo_compactado, tabela_codigos);
-    gerar_arquivo_compactado(nome_arquivo_original,nome_arquivo_compactado,tabela_codigos,bit_lix,tam_arvore,huffman);
+    gerar_arquivo_compactado(nome_arquivo_original,nome_arquivo_compactado,tabela_codigos,bit_lix,tam_arvore,huffman,raiz);
 
     //Debugg
     /*
@@ -663,5 +706,7 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
             free(tabela_codigos[i]);
         }
     }
+    //Liberar memoria dos codigos do huffman
+    free(huffman);
 }
 
