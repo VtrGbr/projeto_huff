@@ -425,20 +425,7 @@ ull contar_bits_totais( const char* nome_arquivo, char** tabela_codigos){
 }
 
 
-//Vamos gerar o arquivo compactado
-/*
-Nesta funcao leremos o arquivo original byte por byte, depois substituir cada byte pelo seu codigo respectivo de Huffman, que foi gerado anteriormente(gerar_tabela_codigos); armazenando essa sequencia no arquivo compactado.
 
-    -Teremos o arquivo original que queremos compactar(lido em modo binario);
-    -Teremos a tabela_codigos: Matriz onde cada indice corresponde a um byte, e o valor eh a sequencia de bits que representa aquele byte no codigo de Huffman
-    -Teremos a leitura e codificacao: Para cada byte lido do arquivo original, a funcao substitui o byte por sua sequencia de bits correspondente da "tabela_codigos";
-    -Escrita em blocos de 1 byte(8 bits): Armazenaremso esses bits em um "buffer" de 8 bits. Quando o buffer estiver cheio(ja completamos 1 byte), ele é escrito no arquivo compactado. Caso restem bits incompletos no final, eles sao preenchidos com 0 para completar o byte final
-
-    Adendo: Antes de colocarmos os bits no arquivo, temos que gerar o cabecalho e colocarmos ele no arquivo compactado para ajudar na descompactacao.
-        A realizacao do cabecalho serah feita da seguinte forma:
-            1º: declararemos que o cabecalho vai ser um "ushort" (unsigned short),pois garanto que nao terah numeros negativos. E um ushort possui espaco para 16 bits, justamente o que queremos.
-            2º: O cabeçalho receberah: bits_lixo << 13 | tamanho_arvore. Ele "juntarah" os bits_lixo com o tamanho da arvore no cabecalho. Explicaremos mais detalhado dentro da funcao
-*/
 
 
 
@@ -542,6 +529,24 @@ void pre_ordem(No* raiz, uchar* tree, int *i){
 }   
 
 
+//Vamos gerar o arquivo compactado
+/*
+Nesta funcao leremos o arquivo original byte por byte, depois substituir cada byte pelo seu codigo respectivo de Huffman, que foi gerado anteriormente(gerar_tabela_codigos); armazenando essa sequencia no arquivo compactado.
+
+    -Teremos o arquivo original que queremos compactar(lido em modo binario);
+    -Teremos a tabela_codigos: Matriz onde cada indice corresponde a um byte, e o valor eh a sequencia de bits que representa aquele byte no codigo de Huffman
+    -Teremos a leitura e codificacao: Para cada byte lido do arquivo original, a funcao substitui o byte por sua sequencia de bits correspondente da "tabela_codigos";
+    -Escrita em blocos de 1 byte(8 bits): Armazenaremso esses bits em um "buffer" de 8 bits. Quando o buffer estiver cheio(ja completamos 1 byte), ele é escrito no arquivo compactado. Caso restem bits incompletos no final, eles sao preenchidos com 0 para completar o byte final
+
+    Adendo: Antes de colocarmos os bits no arquivo, temos que gerar o cabecalho e colocarmos ele no arquivo compactado para ajudar na descompactacao.
+        A realizacao do cabecalho serah feita da seguinte forma:
+            1º: declararemos que o cabecalho vai ser um "ushort" (unsigned short),pois garanto que nao terah numeros negativos. E um ushort possui espaco para 16 bits, justamente o que queremos.
+            2º: O cabeçalho receberah: bits_lixo << 13 | tamanho_arvore. Ele "juntarah" os bits_lixo com o tamanho da arvore no cabecalho. Explicaremos mais detalhado dentro da funcao
+
+    Adicionamos nesta funcao a insercao da arvore no arquivo:
+    Vamos usar chamar a funcao "pre-ordem" para colocarmos os bytes em um vetor e logo apos escrever este vetor no arquivo
+*/
+
 void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nome_arquivo_compactado, char** tabela_codigos,int bits_lixo,int tamanho_arvore,char* codigo_huffman,No* raiz){
     //Vamos criar dois arquivos e abrir eles
     int i = 0;
@@ -553,6 +558,12 @@ void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nom
         perror("Falha ao abrir os arquivos");
         return; // Paro o processo
     }else{
+        
+        //Alocacao de um vetor para receber os bytes da arvore
+        uchar arvore[1024]; // talvez precise mudar o tamanho deste vetor
+        pre_ordem(raiz,arvore,&i);
+
+        fwrite(arvore,sizeof(uchar),i,arquivo_compactado); // Colocando a arvore no arquivo
 
         //Construcao do cabecalho:
         /*
@@ -575,11 +586,6 @@ void gerar_arquivo_compactado(const char* nome_arquivo_original, const char* nom
              10011010010
         1110010011010010 
         */
-
-        uchar arvore[1024]; // talvez precise mudar o tamanho deste vetor
-        pre_ordem(raiz,arvore,&i);
-
-        fwrite(arvore,sizeof(uchar),i,arquivo_compactado); // Colocando a arvore no arquivo
 
         ushort cabecalho = (bits_lixo << 13) | tamanho_arvore;
 
@@ -677,13 +683,11 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     
     gerar_tabela_codigos(raiz, codigo_inicial, tabela_codigos);
 
-    
-
     ull tam_arq = contar_bits_totais(nome_arquivo_original,tabela_codigos); 
 
-    int bit_lix = total_bits_lixo(tam_arq);
-    int tam_arvore = calcular_tamanho_arvore(raiz);
-    char* huffman = codificar(tabela_codigos,nome_arquivo_original);
+    int bit_lix = total_bits_lixo(tam_arq);  //bit_lixo 
+    int tam_arvore = calcular_tamanho_arvore(raiz); // tamanho da arvore
+    char* huffman = codificar(tabela_codigos,nome_arquivo_original); //codigo de huffman
 
     // Passo 4: Escrever o arquivo compactado
     //escrever_arquivo_compactado(nome_arquivo_original, nome_arquivo_compactado, tabela_codigos);
