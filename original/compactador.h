@@ -149,7 +149,7 @@ int calcular_tamanho_arvore(No* raiz);
 //Funcao para escrever a arvore em pre-ordem e colocar no arquivo, posteriormente
 //Vale salientar que devemos considerar que cada noh interno eh "*"
 //A folha possui o caracter ou byte que queremos para formar o arquivo posteriormente na descompactacao
-void pre_ordem(No* raiz, uchar* tree, int *i);
+void pre_ordem(No* raiz,FILE * arquivo_compactado);
 
 //Funcao para gerar o codigo da arvore (printar em pre-ordem)
 char* codificar(char** tabela_codigos,const char* nome_arquivo);
@@ -157,5 +157,9 @@ char* codificar(char** tabela_codigos,const char* nome_arquivo);
 //Funcao geral para compactar o arquivo
 //Receberemos o nome do arquivo original e nome do arquivo para onde irah a compactacao
 void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arquivo_compactado);
+
+void bits_compactados(const char* nome_arquivo_original, FILE* arquivo_compactado, char** tabela_codigos);
+
+void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvore);
 
 #endif
