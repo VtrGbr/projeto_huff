@@ -1,0 +1,4 @@
+g++ .\Cunit.c .\biblioteca\unity.c -o teste
+
+//Caso seja o compilador gcc, utilizar
+gcc .\Cunit.c .\biblioteca\unity.c -o teste
