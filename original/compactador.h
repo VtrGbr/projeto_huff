@@ -158,8 +158,10 @@ char* codificar(char** tabela_codigos,const char* nome_arquivo);
 //Receberemos o nome do arquivo original e nome do arquivo para onde irah a compactacao
 void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arquivo_compactado);
 
+//Coloca os bits no arquivo compactado
 void bits_compactados(const char* nome_arquivo_original, FILE* arquivo_compactado, char** tabela_codigos);
 
+//Funcao que escreve os bits_lixo e o tamanho da arvore no arquivo compactado
 void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvore);
 
 #endif

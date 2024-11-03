@@ -1,16 +1,17 @@
 #include "compactador.h"
 
 int main() {
-    char nome_arquivo_original[100], nome_arquivo_compactado[100],opcao[20];
+    char nome_arquivo_original[100], nome_arquivo_compactado[100];
+    int opcao;
 
     
     do
     {
-        printf("\nDigite a opcao que voce quer: compactar, descompactar ou sair\n");
-        fgets(opcao,20,stdin);
-        opcao[strcspn(opcao, "\n")] = 0; // Remover nova linha
+        printf("\nDigite a opcao que voce quer:\n 1 - compactar;\n 2 - descompactar;\n 3 - sair\n");
+        scanf("%d",&opcao);
+        getchar();
 
-        if( strcmp(opcao, "compactar") == 0){
+        if( opcao == 1){
             // Lendo os nomes dos arquivos
             printf("Digite o nome do arquivo original: ");
             fgets(nome_arquivo_original, sizeof(nome_arquivo_original), stdin);
@@ -22,13 +23,13 @@ int main() {
 
             compactar_arquivo(nome_arquivo_original, nome_arquivo_compactado);
 
-        }else if( strcmp(opcao,"descompactar") == 0){
+        }else if( opcao == 2){
             printf("EM processo\n");
         }else{
             printf("opcao invalida\n");
         }
 
-    } while (strcmp(opcao,"sair") != 0);
+    } while (opcao != 3);
     
 
     
