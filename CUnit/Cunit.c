@@ -153,8 +153,8 @@ void teste_pilha() {
     pilha = push(&pilha, 5);
     pilha = push(&pilha, 7);
 
-    TEST_ASSERT_EQUAL(10, pop(&pilha)->valor);
     TEST_ASSERT_EQUAL(5, pop(&pilha)->valor);
+    TEST_ASSERT_EQUAL(10, pop(&pilha)->valor);
     TEST_ASSERT_EQUAL(7, pop(&pilha)->valor);
 }
 

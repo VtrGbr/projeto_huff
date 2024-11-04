@@ -1,5 +1,6 @@
 #include "compactador.h"
 
+
 //Criacao da lista
 Lista* criar_lista(){
     Lista* list = (Lista*)malloc(sizeof(Lista));
