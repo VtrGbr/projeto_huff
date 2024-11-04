@@ -514,7 +514,6 @@ void pre_ordem(No* raiz,FILE * arquivo_compactado){
             fputc('*',arquivo_compactado);
         }
 
-        //Observacao: incrementamos o valor de "*i" para que possamos saber o valor dele ao final da funcao e podermos usarmos este valor ao escrever a arvore no arquivo compactado e tambem para podermos navegar no vetor
 
         pre_ordem(raiz->esq,arquivo_compactado);
         pre_ordem(raiz->dir,arquivo_compactado );
@@ -556,7 +555,6 @@ void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvor
     // Cria os 2 bytes de cabeçalho para armazenar bitsLixo e tamanhoArvore
     unsigned short cabecalho = (bits_lixo << 13) | tamanho_arvore;
     
-    //fwrite(&cabecalho, sizeof(unsigned short), 1, arquivo_compactado); // Escreve o cabeçalho no arquivo
 
     //primeiroByte: Extrai os 8 bits mais significativos (à esquerda) de cabecalho para armazenar no primeiro byte.
     //cabecalho >> 8 desloca o valor 8 bits para a direita, eliminando os 8 bits menos significativos.

@@ -141,6 +141,7 @@ unsigned int obter_tamanho_arvore(FILE *arquivo_entrada)
     unsigned char primeiro_byte;
     unsigned char segundo_byte;
 
+    //Esse comando move o "cursor" do arquivo para o início (0) do arquivo (SEEK_SET), para garantir que a leitura comece do início.
     fseek(arquivo_entrada, 0, SEEK_SET);
 
     primeiro_byte = getc(arquivo_entrada); 
