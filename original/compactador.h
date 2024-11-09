@@ -162,6 +162,8 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
 void bits_compactados(const char* nome_arquivo_original, FILE* arquivo_compactado, char** tabela_codigos);
 
 //Funcao que escreve os bits_lixo e o tamanho da arvore no arquivo compactado
-void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvore);
+void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvore, No* raiz, const char *extensao);
+
+void obterExtensao(const char *nomeArquivo, char *extensao);
 
 #endif

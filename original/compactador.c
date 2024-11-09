@@ -524,73 +524,40 @@ void pre_ordem(No* raiz,FILE * arquivo_compactado){
 //Vamos gerar o arquivo compactado
 
 //Funcao para escrever o cabecalho
-//Construcao do cabecalho:
-        /*
-        A realizacao do cabecalho serah feita da seguinte forma:
-            1º: declararemos que o cabecalho vai ser um "ushort" (unsigned short),pois garanto que nao terah numeros negativos. E um ushort possui espaco para 16 bits, justamente o que queremos.
-            2º: O cabeçalho receberah: bits_lixo << 13 | tamanho_arvore. Ele "juntarah" os bits_lixo com o tamanho da arvore no cabecalho. Explicaremos mais detalhado dentro da funcao
+// Função para obter a extensão do arquivo
+void obterExtensao(const char *nomeArquivo, char *extensao) {
+    const char *ponto = strrchr(nomeArquivo, '.');  // Encontra a última ocorrência de '.'
+    if (ponto && ponto != nomeArquivo) {
+        strncpy(extensao, ponto + 1, 6);  // Copia até 6 caracteres após o '.'
+        extensao[6] = '\0';  // Garante que a extensão termine em '\0'
+    } else {
+        strcpy(extensao, "");  // Sem extensão
+    }
+}
+// Função para escrever o cabeçalho completo no arquivo de saída
+void escrever_cabecalho(FILE *arquivo, int bitsLixo, int tamanhoArvore, No* raiz, const char *extensao) {
+    // Escrever Byte 1: Bits de lixo
+    fputc(bitsLixo, arquivo);
 
-        O cabecalho tem que ter 3 bits (mais significativos) representando os bits_lixo e 13 bits( menos significativos) representando o tamanho da arvore.
+    // Escrever Byte 2: Tamanho da árvore
+    fputc(tamanhoArvore, arquivo);
 
-        Queremos explicar como vai funcionar o calculo do cabecalho: 
-        ushort cabecalho = (bits_lixo << 13) | tamanho_arvore
+    // Escrever a árvore em pré-ordem
+    pre_ordem(raiz, arquivo);
 
-        Vamos deslocar os bits de lixo 13 vezes para a esquerda, pois assim garantimos que o bits de lixo serao os 3 bits mais significativos do cabecalho. Logo depois faremos a operacao OR bit a bit, para colocar o tamanho da arvore; pois esta operacao vai comparar os bits e quando um desses bits forem 1, ela coloca 1
+    // Validar o tamanho da extensão
+    int tamanhoExtensao = strlen(extensao);
+    if (tamanhoExtensao > 6) {
+        fprintf(stderr, "Erro: extensão do arquivo original é maior que 6 caracteres. Não é possível compactar.\n");
+        exit(EXIT_FAILURE);
+    }
 
-        Exemplo
-        bits_lixo = 7 ( 0000000000000111)
-        tamanho da arvore = 1234 ( 10011010010)
+    // Byte com o tamanho da extensão e 5 bits de lixo
+    unsigned char byteTamanhoExtensao = (tamanhoExtensao << 5) & 0xE0;  // Shift para os três primeiros bits
+    fputc(byteTamanhoExtensao, arquivo);
 
-        Quando fazemos bits_lixo << 13, obteremos: 
-        1110000000000000
-
-        Logo apos vamos fazer a comparacao bit a bit: ((bits_lixo << 13) | tamanho_arvore)
-        1110000000000000
-             10011010010
-        1110010011010010
-
-*/
-void escrever_cabecalho(FILE* arquivo_compactado,int bits_lixo,int tamanho_arvore){
-    
-    // Cria os 2 bytes de cabeçalho para armazenar bitsLixo e tamanhoArvore
-    unsigned short cabecalho = (bits_lixo << 13) | tamanho_arvore;
-    
-
-    //primeiroByte: Extrai os 8 bits mais significativos (à esquerda) de cabecalho para armazenar no primeiro byte.
-    //cabecalho >> 8 desloca o valor 8 bits para a direita, eliminando os 8 bits menos significativos.
-    /*
-    Como isso funciona: Deslocaremos o cabecalho 8 bits para a direita, garantindo que so tenhamos os bits mais significativos.
-    Após isso aplicamos uma máscara que serve para para preservar apenas os 8 bits menos significativos do valor resultante do deslocamento. Assim garantimos que apenas os ultimos 8 bits sejam considerados e que qualquer bit extra, caso o valor inicial fosse maior que 16 bits, seja removido.
-    */
-    unsigned char primeiroByte = (cabecalho >> 8) & 0xFF; // Byte mais significativo
-    
-    //& 0xFF assegura que apenas os 8 bits mais significativos sejam armazenados em primeiroByte.
-    //segundoByte: Extrai os 8 bits menos significativos (à direita) de cabecalho.
-    // cabecalho & 0xFF aplica uma máscara de 8 bits, garantindo que apenas os bits menos significativos permaneçam.
-    
-    //0xFF em hexadecimal representa 11111111 em binário, ou seja, 8 bits com valor 1.
-
-    /*
-    Vamos mostrar um exemplo para ficar mais intuitivo:
-        Imagine que o cabecalho seja  0110000010000011
-
-         cabecalho: 0110000010000011
-              0xFF: 0000000011111111
-         resultado(and): 0000000010000011
-
-         Perceba que os 8 bits menos significativos foram preservados
-
-    */
-    unsigned char segundoByte = cabecalho & 0xFF;          // Byte menos significativo
-
-    
-    fputc(primeiroByte, arquivo_compactado);
-    fputc(segundoByte, arquivo_compactado);
-
-    /*
-    Fizemos esta abordagem pois, quando comparamos os bytes do arquivo pelo leitor Hexadecimal, notamos que sempre o cabeçalho estava trocado, o que era pra ser "07 80", tava saindo "80 07". Os bytes de lixo de tamanho da arvore, por algum motivo, estavam sendo trocados, entao usamos a abordagem de separar os dois bytes e escrever o primeiro byte que possui o lixo, primeiro no arquivo, e depois escrever o byte correspondente ao tamanho da arvore
-    */
-
+    // Escrever a extensão do arquivo
+    fwrite(extensao, sizeof(char), tamanhoExtensao, arquivo);
 }
 
 
@@ -695,14 +662,18 @@ void compactar_arquivo(const char* nome_arquivo_original, const char* nome_arqui
     int bit_lix = total_bits_lixo(tam_arq);  //bit_lixo 
     int tam_arvore = calcular_tamanho_arvore(raiz); // tamanho da arvore
 
+    // Obter extensão do arquivo original
+    char extensao[7];
+    obterExtensao(nome_arquivo_original, extensao);
+
     //Gerar o arquivo compactado
     FILE* arquivo_compactado = fopen(nome_arquivo_compactado,"wb");
     if( arquivo_compactado == NULL){
         perror("Falha ao abrir o arquivo");
         return;
     }
-    escrever_cabecalho(arquivo_compactado,bit_lix,tam_arvore);
-    pre_ordem(raiz,arquivo_compactado);
+    escrever_cabecalho(arquivo_compactado,bit_lix,tam_arvore,raiz,extensao);
+    //pre_ordem(raiz,arquivo_compactado);
     //char* huffman = codificar(tabela_codigos,nome_arquivo_original); //codigo de huffman
 
     // Passo 4: Escrever o arquivo compactado

@@ -1,6 +1,6 @@
 #include "compactador.h"
 #include "descompactar.h"
-
+/*
 void macioFeliz (){
 
     printf(
@@ -53,7 +53,7 @@ void macioFeliz (){
         "                            ..                                 ..                                    \n"
     );
 }
-
+*/
 int main() {
     char nome_arquivo_original[100], nome_arquivo_compactado[100];
     int opcao;
@@ -79,16 +79,19 @@ int main() {
             compactar_arquivo(nome_arquivo_original, nome_arquivo_compactado);
 
         }else if( opcao == 2){
-            printf("Marcio esta feliz?");
+           /* printf("Marcio esta feliz?");
             scanf(" %c",&felicidade);
             getchar();
-
+            */
+            /*
             if( felicidade == 's'){
                 macioFeliz();
                 descompactarPrincipal();
             }else{
                 descompactarPrincipal();
-            }
+            }*/
+
+           descompactarPrincipal();
 
         }else{
             printf("opcao invalida\n");
