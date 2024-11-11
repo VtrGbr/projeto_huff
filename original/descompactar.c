@@ -1,4 +1,5 @@
 #include "descompactar.h"
+#include "compactador.h"
 
 
 // Função para abrir um arquivo, solicitando o nome ao usuário
@@ -43,9 +44,33 @@ int eh_folha_descompactar(no_t *arvore_binaria)
 }
 
 /* verifica se o bit está definido na posição ou não*/
+//unsigned int caractere: valor ao qual queremos verificar o bit
+//posicao: eh a posicao do bit que queremos verificar
 int bit_esta_definido_descompactar(unsigned int caractere, int posicao) 
 {
+    //A variável mascara é criada para isolar o bit na posição desejada, com 1 << posicao deslocando um único bit para a esquerda até a posição especificada.
+
+    /*
+    Exemplo: Digamos que vamos analisar a posicao 3, entao quando fizermos 1 << posicao, ficaremos com:
+                             1 (00000001)    ---->  1 << 3 -----> (00001000)
+
+    Agora a mascara possui um 1 somente na posição desejada e '0s' nas outras posições, o que ajuda a isolar o bit específico.
+    */
     unsigned int mascara = 1 << posicao;
+
+
+    //Vamos comparar o valor da mascara com o valor de bit que queremos comparar
+
+    /*
+    Exemplo: posicao = 3(00000011), caracter = 13 (00001101)
+
+    Quando fizermos a mascara, ficarah com (00001000)
+    Entao quando fizermos (00001000) & ( 00001101). Vamos notar que o valor serah : 000010000
+
+    Logo concluimos que o bit na posicao 3 estah ativado
+
+    Caso o bit nao esteja ativado ele retorna 0, caso contrario retorna algum valor diferente de 0
+    */
     return (mascara & caractere);
 }
 
@@ -63,9 +88,14 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
     long long int bytes; 
     int i; 
 
+    //fseek move o ponteiro do arquivo para o último byte, e getc lê esse byte para armazená-lo em ultimo_byte.
     fseek(arquivo_entrada, -1, SEEK_END);
     ultimo_byte = getc(arquivo_entrada);
+    //ftell obtém a posição total de bytes do arquivo (total_bytes), que será usada para delimitar o loop de leitura dos dados compactados.
     total_bytes = ftell(arquivo_entrada);
+
+    //Posiciona o ponteiro do arquivo logo após os dois primeiros bytes do cabeçalho (tamanho da arvore e lixo) e o trecho que representa a árvore de Huffman.
+    //Esse ponto marca o início dos dados compactados no arquivo.
     fseek(arquivo_entrada, (2 + tamanho_arvore), 0);
 
     byte_atual = getc(arquivo_entrada);
@@ -87,7 +117,7 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
                 {
                     no_atual = no_atual->esquerda;
                 }
-            }
+            }//Caso seja uma folha, coloque o caracter ou byte no arquivo descompactado
             if (eh_folha_descompactar(no_atual) != 0) 
             {
                 fprintf(arquivo_saida, "%c", no_atual->caractere);

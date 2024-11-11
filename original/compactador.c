@@ -526,8 +526,14 @@ void pre_ordem(No* raiz,FILE * arquivo_compactado){
 //Funcao para escrever o cabecalho
 // Função para obter a extensão do arquivo
 void obterExtensao(const char *nomeArquivo, char *extensao) {
+    //Se encontrar o ponto, strrchr retorna um ponteiro para essa posição em nomeArquivo. Caso contrário, retorna NULL.
     const char *ponto = strrchr(nomeArquivo, '.');  // Encontra a última ocorrência de '.'
+
+    //verificamos se "ponto" != NULL, ou seja foi encontrada um ultimo ponto
+    //Verificamos se "ponto" != nomeArquivo, pois pode acontecer que o nome do arquivo comece com ".",exemplo ".arquivoteste"
     if (ponto && ponto != nomeArquivo) {
+        //"ponto + 1" : Vamos apontar para as letras apos o ultimo ponto, ou seja, para a extensao.Copiando a extensao
+        //"6": pois queremos copiar no maximo 6 caracteres da extensao
         strncpy(extensao, ponto + 1, 6);  // Copia até 6 caracteres após o '.'
         extensao[6] = '\0';  // Garante que a extensão termine em '\0'
     } else {
@@ -553,6 +559,14 @@ void escrever_cabecalho(FILE *arquivo, int bitsLixo, int tamanhoArvore, No* raiz
     }
 
     // Byte com o tamanho da extensão e 5 bits de lixo
+    //Essa parte do código manipula o valor de tamanhoExtensao para garantir que ele ocupe apenas os três bits mais significativos de um byte.
+    /*
+    Por exemplo: Digamos que o tamanho da extensao seja 3 (00000011) e 0xE0 é 11100000
+                A operacao que fazemos no "byteTamanhoExtensao" serve para colocar o tamanho da extensao nos 3 bits mais significativos e quando fazemos AND com o "0xE0" garantimos que os tres bits mais significativos serao preservados
+
+                tamanhoExtensao << 5 : 00000011 << 5 = 01100000
+
+    */
     unsigned char byteTamanhoExtensao = (tamanhoExtensao << 5) & 0xE0;  // Shift para os três primeiros bits
     fputc(byteTamanhoExtensao, arquivo);
 
