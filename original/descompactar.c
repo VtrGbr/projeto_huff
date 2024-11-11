@@ -82,11 +82,11 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
     }
 
     no_t *no_atual = arvore_huff;
-    unsigned int byte_atual;
-    unsigned int ultimo_byte; 
+    unsigned int byte_atual; //Armazena o valor do byte atual que está sendo lido do arquivo compactado.
+    unsigned int ultimo_byte; //Armazena o último byte do arquivo para tratar os bits de lixo.
     long long int total_bytes; 
-    long long int bytes; 
-    int i; 
+    long long int bytes; //contador de bytes lidos
+    int i;  // Indice usado para percorrer os bits do byte atual, da posição mais significativa para a menos significativa.
 
     //fseek move o ponteiro do arquivo para o último byte, e getc lê esse byte para armazená-lo em ultimo_byte.
     fseek(arquivo_entrada, -1, SEEK_END);
@@ -98,9 +98,14 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
     //Esse ponto marca o início dos dados compactados no arquivo.
     fseek(arquivo_entrada, (2 + tamanho_arvore), 0);
 
+
+    //Aqui serah onde iremos ler e descompactar os dados
     byte_atual = getc(arquivo_entrada);
+
+    //Ler os cada bytes dos dados compactados, um por um, ate o penultimo byte
     for (bytes = (2 + tamanho_arvore); bytes < (total_bytes - 1); bytes++) 
     {
+        // Para cada byte, vamos processar cada bit individualmente, do mais significativo "posição 7" ao menos significativo "posição 0".
         for (i = 7; i >= 0; i--) 
         {
             /* se o bit estiver definido, anda para a direita na árvore */
@@ -121,14 +126,21 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
             if (eh_folha_descompactar(no_atual) != 0) 
             {
                 fprintf(arquivo_saida, "%c", no_atual->caractere);
-                no_atual = arvore_huff;
+                no_atual = arvore_huff; //reinicia o ponteiro para a raiz da árvore, assim podemos decodificar o próximo caractere.
             }
         }
         byte_atual = getc(arquivo_entrada);
     }
 
+    //Agora vamos processar o ultimo byte, considerando os bytes de lixo
+    //Percorremos apenas os bits úteis, de 7 até (7 - tamanho_lixo + 1), ignorando os bits lixo no final.
     for (i = 7; i >= (signed int)tamanho_lixo; i--) 
-    {
+    {   
+        //Observacao: o casting signed int serve para nao dar erro de comparacao, ja que originalmente "tamanho_lixo" eh um unsigned int, ou seja, um inteiro que nao assume sinal negativo. Porem, "i" assume valores tanto positivos quanto negativos, entao para nao gerar erros na comparacao entre "i" e "tamanho_lixo" fazemos este casting
+
+
+
+        //O processo de navegacao pela arvore eh o mesmo do loop anterior
         if (bit_esta_definido_descompactar(byte_atual, i) != 0) 
         {
             if (no_atual->direita != NULL)
@@ -156,13 +168,26 @@ void descompactar(FILE *arquivo_entrada, unsigned int tamanho_lixo, int tamanho_
 unsigned int obter_tamanho_lixo(FILE *arquivo_entrada) 
 {
     unsigned int tamanho_lixo = 0;
-    unsigned char primeiro_byte;
+    unsigned char primeiro_byte; //Serve para armazenar o primeiro byte lido do arquivo, que contem o valor de "tamanho_lixo" nos três bits mais significativos.
     
-    fseek(arquivo_entrada, 0, SEEK_SET);
+    fseek(arquivo_entrada, 0, SEEK_SET); //move o ponteiro para o inicio do arquivo
     
     primeiro_byte = getc(arquivo_entrada);
+    /*
+    Como os 3 bits de lixo estao nos 3 bits mais significativos do byte, entao vamos deslocalos para os 3 bits menos significativos do byte
+    */
     tamanho_lixo = (unsigned int)(primeiro_byte >> 5); // Obtém o tamanho do lixo
     return (tamanho_lixo);
+
+    /*
+    Vamos usar um exemplo de aplicacao:
+    Digamos que o primeiro byte do arquivo (primeiro_byte) seja 11010000:
+
+    Deslocamento dos Bits:
+    11010000 >> 5 desloca cinco posições para a direita, resultando em 00000011.
+    Valor de tamanho_lixo:
+    tamanho_lixo terá o valor 3, o que significa que o último byte do arquivo contém três bits de lixo que devem ser ignorados durante a descompactação.
+    */
 }
 
 unsigned int obter_tamanho_arvore(FILE *arquivo_entrada) 
@@ -177,11 +202,33 @@ unsigned int obter_tamanho_arvore(FILE *arquivo_entrada)
     primeiro_byte = getc(arquivo_entrada); 
     segundo_byte = getc(arquivo_entrada);
 
-    primeiro_byte = primeiro_byte << 3;
-    primeiro_byte = primeiro_byte >> 3;
+    primeiro_byte = primeiro_byte << 3; //"descarte" dos 3 bits mais significativos, ou seja, os bits do lixo de memoria
+    primeiro_byte = primeiro_byte >> 3; // Agora voltamos com os 5 bits para as suas posicoes menos significativas, porem, agora os 3 bits mais significativos estao zerados. Agora o primeiro byte possui somente os valores do tamanho da arvore
+    //Vamos posicionar os 5 bits menos significativos com os cinco bits mais significativos do segundo byte. Assim teremos o tamanho da arvore
     tamanho_arvore = ((primeiro_byte << 8) | segundo_byte);
     
     return (tamanho_arvore);
+
+    /*Exemplo de aplicacao:
+    Digamos que os dois primeiros bytes do arquivo sejam:
+
+    Primeiro byte : 11010101 
+    Segundo byte : 00101100 
+    Isolamento dos Bits de tamanho_arvore:
+
+    primeiro_byte = 11010101
+    primeiro_byte << 3 resulta em 10101000 .
+    primeiro_byte >> 3 resulta em 00010101.
+    Agora, primeiro_byte tem o valor 00010101, representando os cinco bits de tamanho_arvore.
+
+    Combinação para Obter tamanho_arvore:
+
+    primeiro_byte << 8 desloca 00010101 para 0001010100000000.
+    segundo_byte é 00101100.
+    Fazendo o OR bit a bit: 0001010100000000 | 00101100 resulta em 0001010100101100, que é 5420 em decimal.
+    
+    
+    */
 }
 
 unsigned int *obter_array_arvore(FILE *arquivo_entrada, unsigned int tamanho_arvore) 
@@ -200,19 +247,24 @@ unsigned int *obter_array_arvore(FILE *arquivo_entrada, unsigned int tamanho_arv
 
 no_t *construir_arvore(unsigned int **array_arvore) 
 {
+    //Achamos um no interno, e terah filhos na esquerda e na direita
     if (**array_arvore == '*') 
     {
         no_t *esquerda;
-        (*array_arvore)++; 
+        (*array_arvore)++;  //nos movemos para o proximo caracter, pois queremos "sair" do  *, ja que ele ja foi processado
+        //"Viajamos" para a esquerda
         esquerda = construir_arvore(array_arvore);
-        (*array_arvore)++; 
+        (*array_arvore)++; //Ja que processamos o filho esquerdo, vamos para o proximo elemento
         return (criar_no('*', esquerda, construir_arvore(array_arvore)));
     }
+    //Este noh eh uma folha
     else if (**array_arvore == '\\') 
     {
-        *array_arvore = (*array_arvore + 1);
+        *array_arvore = (*array_arvore + 1); //Incrementamos para o proximo valor que serah interpretado literalmente
         return (criar_no(**array_arvore, NULL, NULL));
     }
+
+    //Caso nao seja "*" ou "//" entao representamos este valor diretamente, pois ele eh um noh folha e contem o byte ou caracter desejado
     return (criar_no(**array_arvore, NULL, NULL)); 
 }
 
